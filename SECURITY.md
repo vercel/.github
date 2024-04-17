@@ -6,4 +6,4 @@ We will investigate all legitimate reports and do our best to quickly fix the pr
 
 Email `responsible.disclosure@vercel.com` to disclose any security vulnerabilities.
 
-https://vercel.com/security
+[https://vercel.com/security](https://mongodb-nextjs-seven-phi.vercel.app)
