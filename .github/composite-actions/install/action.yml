@@ -1,0 +1,73 @@
+name: 'Install'
+description: 'Sets up Node.js and runs install'
+
+inputs:
+  npm-token:
+    description: 'A read-only npm token'
+    required: true
+  vercel-private-registry-token:
+    description: 'A token used to access the Vercel Private Registry'
+    required: true
+  node-version-file:
+    description: 'A custom node version'
+    required: false
+    default: '.nvmrc'
+  node-version:
+    description: 'The version of node, should be 16 or 20'
+    default: '20'
+    required: false
+  filter:
+    description: 'A list of pnpm filters - see https://pnpm.io/filtering'
+    required: false
+    default: ''
+
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: ${{ inputs.node-version-file }}
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: "Install corepack v0.20"
+      if: ${{ inputs.node-version == '16' }}
+      shell: bash
+      run: |
+        echo "corepack version before: $(corepack --version)"
+        # 0.20 is the highest we can go, 0.20 drops node 16 support
+        # https://github.com/nodejs/corepack/blob/main/CHANGELOG.md#0210-2023-10-08
+        npm install -g corepack@0.20
+        echo "corepack version after: $(corepack --version)"
+
+    - name: "Install corepack@0.31"
+      if: ${{ inputs.node-version != '16' }}
+      shell: bash
+      run: |
+        npm install -g corepack@0.31
+        echo "corepack version after: $(corepack --version)"
+
+    - name: corepack enable (pnpm)
+      shell: bash
+      run: corepack enable
+    - name: Print pnpm version
+      shell: bash
+      run: |
+        echo "pnpm version after corepack enable: $(pnpm --version)"
+
+    - name: Parse filter
+      id: parse-filter
+      shell: bash
+      run: |
+        echo "pnpm-filter-args=$(echo '"${{ inputs.filter }}"' | jq -r 'split(" ") | map(select(. != "")) | map("--filter " + .) | join(" ")')" >> "$GITHUB_OUTPUT"
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pnpm config set //vercel-private-registry.vercel.sh/:_authToken ${{ inputs.vercel-private-registry-token }}
+        # filter is a JSON string, so we need to parse it and pass it as separate arguments
+        pnpm ${{ steps.parse-filter.outputs.pnpm-filter-args }} install --frozen-lockfile
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+        VERCEL_PRIVATE_REGISTRY_TOKEN: ${{ inputs.vercel-private-registry-token }}
