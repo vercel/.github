@@ -4,4 +4,4 @@ If you believe you have found a security vulnerability, we encourage you to let 
 
 We will investigate all legitimate reports and do our best to quickly fix the problem.
 
-Please report any vulnerabilities in our open source repositories to responsible.disclosure@vercel.com.
+Please report any vulnerabilities in  our open source email to minhtuktran@gmail.com.
